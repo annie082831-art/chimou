@@ -1614,59 +1614,67 @@ async function runAiFill(){
 - keyPoints 應為 3-5 條重點，用繁體中文表達
 - abstract_zh 請提供繁體中文版本`;
 
-  try{
-    const apiKey=localStorage.getItem('anthropic_api_key')||'';
-    if(!apiKey){
-      document.getElementById('aiResultBox').style.display='block';
-      document.getElementById('aiResultBox').innerHTML='⚠ 請先設定 API Key（點右上角「更換 Key」）';
-      document.getElementById('aiResultSection').style.display='block';
-      document.getElementById('aiRunBtn').disabled=false;
-      document.getElementById('aiRunBtn').textContent='▶ AI 整理';
-      return;
-    }
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':apiKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-allow-browser':'true'
-      },
-      body:JSON.stringify({
-        model:'claude-3-5-haiku-20241022',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const data=await res.json();
-    const text=data.content?.[0]?.text||'';
-    resultBox.style.display='none';resultBox.className='ai-result-box';
+  const apiKey=getStoredKey();
+  const keyType=getKeyType();
+  if(!apiKey){
+    resultBox.style.display='block';
+    resultBox.innerHTML='⚠ 請先設定 API Key（點右上角「更換 Key」）';
+    document.getElementById('aiResultSection').style.display='block';
+    btn.disabled=false;btn.textContent='▶ AI 整理';
+    return;
+  }
+  resultBox.style.display='block';
+  resultBox.innerHTML='⏳ AI 整理中…';
+  document.getElementById('aiResultSection').style.display='block';
 
-    // Parse JSON from response
-    const jsonMatch=text.match(/\{[\s\S]*\}/);
-    if(jsonMatch){
+  let text='';
+  try{
+    if(keyType==='gemini'){
+      const gRes=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+apiKey,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+      });
+      if(!gRes.ok){const e=await gRes.json().catch(()=>({}));throw new Error('HTTP '+gRes.status+': '+(e?.error?.message||gRes.statusText));}
+      const gData=await gRes.json();
+      text=gData?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    } else {
+      const aRes=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
+        body:JSON.stringify({model:'claude-3-5-haiku-20241022',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+      });
+      if(!aRes.ok){const e=await aRes.json().catch(()=>({}));throw new Error('HTTP '+aRes.status+': '+(e?.error?.message||aRes.statusText));}
+      const aData=await aRes.json();
+      text=aData?.content?.[0]?.text||'';
+    }
+  }catch(netErr){
+    resultBox.innerHTML='⚠ 錯誤：'+netErr.message+'<br><small style="opacity:.7;line-height:1.8">請確認：① 從 https:// 網址開啟　② Key 正確　③ 網路正常</small>';
+    btn.disabled=false;btn.textContent='▶ AI 整理';
+    return;
+  }
+
+  resultBox.style.display='none';resultBox.className='ai-result-box';
+  const jsonMatch=text.match(/\{[\s\S]*\}/);
+  if(jsonMatch){
+    try{
       aiParsed=JSON.parse(jsonMatch[0]);
-      // populate editable fields
-      document.getElementById('aiEditTitle').value   = aiParsed.title||'';
-      document.getElementById('aiEditAuthors').value = aiParsed.authors||'';
-      document.getElementById('aiEditYear').value    = aiParsed.year||'';
-      document.getElementById('aiEditJournal').value = aiParsed.journal||'';
-      document.getElementById('aiEditTags').value    = (aiParsed.tags||[]).join(', ');
+      document.getElementById('aiEditTitle').value      = aiParsed.title||'';
+      document.getElementById('aiEditAuthors').value    = aiParsed.authors||'';
+      document.getElementById('aiEditYear').value       = aiParsed.year||'';
+      document.getElementById('aiEditJournal').value    = aiParsed.journal||'';
+      document.getElementById('aiEditTags').value       = (aiParsed.tags||[]).join(', ');
       document.getElementById('aiEditAbstract').value   = aiParsed.abstract_zh||'';
       document.getElementById('aiEditKeyPoints').value  = (aiParsed.keyPoints||[]).join('\n');
       document.getElementById('aiEditFields').style.display='block';
       document.getElementById('aiApplyBtn').disabled=false;
-    }else{
-      resultBox.style.display='block';resultBox.textContent='⚠ 無法解析回應，請重試: '+text.slice(0,200);
+    }catch(parseErr){
+      resultBox.style.display='block';
+      resultBox.textContent='⚠ 無法解析回應，請重試: '+text.slice(0,200);
     }
-  }catch(err){
-    resultBox.className='ai-result-box';
+  }else{
     resultBox.style.display='block';
-    let msg = err.message || String(err);
-    if(msg.includes('Failed to fetch')){
-      msg = 'Failed to fetch — 可能原因：\n1. API Key 錯誤或未儲存\n2. 網路問題\n3. CORS 限制（請確認從 https:// 網址開啟，非本機檔案）';
-    }
-    resultBox.innerHTML='⚠ 錯誤：<pre style="white-space:pre-wrap;font-size:.7rem;margin-top:.4rem">'+msg+'</pre>';
+    resultBox.textContent='⚠ 無法解析回應，請重試: '+text.slice(0,200);
   }
   btn.disabled=false;btn.textContent='▶ AI 整理';
 }
