@@ -587,17 +587,16 @@
     <!-- ── Setup Screen (shown when no key) ── -->
     <div id="aiSetupScreen">
       <div class="setup-notice">
-        ⚠ 尚未設定 API Key。請選擇以下其中一種方式，每人只需設定一次。<br>
-        Key 存在你自己的瀏覽器，不會上傳或共享給任何人。
+        ⚠ 尚未設定 API Key。以下兩種方式皆需少量付費，每次整理論文費用極低（約 NT$0.03 以下）。<br>Key 只存在你自己的瀏覽器，不會上傳或共享。
       </div>
 
       <!-- Tab switcher -->
       <div style="display:flex;gap:0;margin-bottom:1.5rem;border:1px solid var(--border)">
         <button id="tabGemini" onclick="switchSetupTab('gemini')" style="flex:1;padding:.55rem;font-family:var(--mono);font-size:.72rem;background:var(--accent);color:white;border:none;cursor:pointer;letter-spacing:.04em">
-          ⭐ Google Gemini（免費）
+          ✦ Google Gemini
         </button>
         <button id="tabAnthropic" onclick="switchSetupTab('anthropic')" style="flex:1;padding:.55rem;font-family:var(--mono);font-size:.72rem;background:white;color:var(--ink-light);border:none;border-left:1px solid var(--border);cursor:pointer;letter-spacing:.04em">
-          Anthropic Claude（付費）
+          ✦ Anthropic Claude
         </button>
       </div>
 
@@ -606,8 +605,8 @@
         <div class="setup-step">
           <div class="setup-step-num">1</div>
           <div class="setup-step-body">
-            <div class="setup-step-title">前往 Google AI Studio</div>
-            <div class="setup-step-desc">開啟 <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a>，用 Google 帳號登入（免費，不需綁定信用卡）。</div>
+            <div class="setup-step-title">前往 Google AI Studio（需綁定信用卡）</div>
+            <div class="setup-step-desc">開啟 <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a>，用 Google 帳號登入。台灣地區需至 <a href="https://console.cloud.google.com/billing" target="_blank">Google Cloud Billing</a> 啟用帳單（綁定信用卡），費用極低。</div>
           </div>
         </div>
         <div class="setup-step">
@@ -636,7 +635,7 @@
           <div class="setup-step-num">1</div>
           <div class="setup-step-body">
             <div class="setup-step-title">申請 Anthropic 帳號</div>
-            <div class="setup-step-desc">前往 <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> 用 Google 帳號登入，並至 Billing 儲值最低 $5 美元（約 NT$160，可整理數千篇論文）。</div>
+            <div class="setup-step-desc">前往 <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> 用 Google 帳號登入，至 Billing 儲值最低 $5 美元（約 NT$160）。每次整理論文約 $0.001，可整理數千篇。</div>
           </div>
         </div>
         <div class="setup-step">
@@ -1538,8 +1537,8 @@ function checkApiKeyStatus(){
   const el=document.getElementById('aiKeyStatus');
   if(!el) return;
   const type=getKeyType();
-  if(type==='gemini') el.textContent='🟢 Google Gemini Key 已設定';
-  else if(type==='anthropic') el.textContent='🟢 Anthropic Key 已設定';
+  if(type==='gemini') el.textContent='🟢 Google Gemini Key 已設定 (✦ Gemini)';
+  else if(type==='anthropic') el.textContent='🟢 Anthropic Claude Key 已設定';
   else el.textContent='⚠ 尚未設定 Key';
 }
 function switchSetupTab(tab){
@@ -1578,7 +1577,7 @@ function saveApiKeyFromSetup(type){
   const inputId = type==='gemini' ? 'setupGeminiInput' : 'setupAnthropicInput';
   const k=document.getElementById(inputId).value.trim();
   if(!k){alert('請先輸入 API Key');return;}
-  if(type==='gemini' && !k.startsWith('AIza')){alert('Gemini Key 格式應為 AIzaSy…');return;}
+  if(type==='gemini' && k.length < 10){alert('請輸入正確的 Gemini API Key');return;}
   if(type==='anthropic' && !k.startsWith('sk-ant-')){alert('Anthropic Key 格式應為 sk-ant-…');return;}
   const storeKey = type==='gemini' ? 'gemini_api_key' : 'anthropic_api_key';
   // clear the other type
