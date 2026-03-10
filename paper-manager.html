@@ -357,6 +357,24 @@
   .btn-signout:hover{background:rgba(255,255,255,.15)}
   /* config notice */
   .config-notice{background:#fff3cd;border:1px solid #ffc107;padding:.75rem 1rem;font-family:var(--mono);font-size:.68rem;color:#856404;margin-bottom:1rem;line-height:1.6;text-align:left}
+
+  /* ── AI Key Setup Screen ── */
+  #aiSetupScreen{display:none;padding:.5rem 0}
+  #aiMainScreen{display:block}
+  .setup-step{display:flex;gap:1rem;margin-bottom:1.25rem;align-items:flex-start}
+  .setup-step-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:white;font-family:var(--mono);font-size:.8rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.1rem}
+  .setup-step-body{flex:1}
+  .setup-step-title{font-family:var(--mono);font-size:.75rem;font-weight:600;color:var(--ink);margin-bottom:.3rem;letter-spacing:.04em}
+  .setup-step-desc{font-family:var(--serif);font-size:.85rem;color:var(--ink-light);line-height:1.6}
+  .setup-step-desc a{color:var(--accent);text-decoration:underline}
+  .setup-key-row{display:flex;gap:.5rem;margin-top:.6rem}
+  .setup-key-input{flex:1;border:2px solid var(--border);padding:.5rem .75rem;font-family:var(--mono);font-size:.8rem;background:white;outline:none;transition:border-color .2s}
+  .setup-key-input:focus{border-color:var(--accent)}
+  .setup-key-btn{padding:.5rem 1rem;background:var(--accent);color:white;border:none;cursor:pointer;font-family:var(--mono);font-size:.75rem;letter-spacing:.05em;transition:background .2s}
+  .setup-key-btn:hover{background:var(--accent-light)}
+  .setup-notice{background:#fef9ec;border:1px solid #e8c547;padding:.65rem .85rem;font-family:var(--mono);font-size:.68rem;color:#6b5800;line-height:1.7;margin-bottom:1.25rem}
+  .setup-key-saved{color:#2e7d32;font-family:var(--mono);font-size:.72rem;margin-top:.4rem;display:none}
+  .setup-divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0}
 </style>
 </head>
 <body>
@@ -564,9 +582,62 @@
 <div class="ai-modal-overlay" id="aiModalOverlay">
   <div class="ai-modal">
     <div class="ai-modal-title">✦ AI 快速整理論文</div>
-    <div class="ai-modal-sub">貼上標題與摘要，AI 自動提取關鍵資訊 · AI extracts key info from title &amp; abstract</div>
+    <div class="ai-modal-sub" id="aiModalSub">貼上標題與摘要，AI 自動提取關鍵資訊 · AI extracts key info from title &amp; abstract</div>
+
+    <!-- ── Setup Screen (shown when no key) ── -->
+    <div id="aiSetupScreen">
+      <div class="setup-notice">
+        ⚠ 尚未設定 API Key，AI 功能需要 Anthropic API Key 才能使用。<br>
+        每人只需設定一次，Key 存在你自己的瀏覽器，不會上傳或共享。
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">1</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">申請 Anthropic 帳號</div>
+          <div class="setup-step-desc">前往 <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> 註冊免費帳號（可用 Google 登入）。新帳號有免費額度，足夠日常使用。</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">2</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">取得 API Key</div>
+          <div class="setup-step-desc">登入後前往 <a href="https://console.anthropic.com/settings/keys" target="_blank">Settings → API Keys</a>，點「Create Key」，複製產生的 Key（格式為 <code>sk-ant-...</code>）。</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="setup-step-num">3</div>
+        <div class="setup-step-body">
+          <div class="setup-step-title">貼入下方並儲存</div>
+          <div class="setup-step-desc">Key 只存在此瀏覽器本機（localStorage），不會傳送給任何人。</div>
+          <div class="setup-key-row">
+            <input class="setup-key-input" type="password" id="setupKeyInput" placeholder="sk-ant-api03-…">
+            <button class="setup-key-btn" onclick="saveApiKeyFromSetup()">儲存並開始使用</button>
+          </div>
+          <div class="setup-key-saved" id="setupKeySaved">✓ 已儲存！正在開啟 AI 功能…</div>
+        </div>
+      </div>
+      <hr class="setup-divider">
+      <div style="text-align:right">
+        <button class="btn-ai-cancel" onclick="closeAiModal()">關閉</button>
+      </div>
+    </div>
+
+    <!-- ── Main AI Screen ── -->
+    <div id="aiMainScreen">
 
     <div class="form-group">
+      <div id="aiKeySection" style="margin-bottom:1rem;padding:.75rem;background:#f5f0e8;border:1px solid var(--border);font-family:var(--mono);font-size:.72rem">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
+          <span style="color:var(--ink-light)">🔑 Anthropic API Key</span>
+          <span id="aiKeyStatus" style="color:#2e7d32"></span>
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <input type="password" id="aiKeyInput" placeholder="sk-ant-..." style="flex:1;border:1px solid var(--border);padding:.35rem .6rem;font-family:var(--mono);font-size:.72rem;background:white">
+          <button onclick="saveApiKey()" style="padding:.35rem .75rem;background:var(--accent);color:white;border:none;cursor:pointer;font-family:var(--mono);font-size:.7rem">儲存</button>
+          <button onclick="clearApiKey()" style="padding:.35rem .75rem;background:transparent;color:var(--ink-light);border:1px solid var(--border);cursor:pointer;font-family:var(--mono);font-size:.7rem">清除</button>
+        </div>
+        <div style="color:var(--ink-light);margin-top:.35rem;font-size:.65rem">Key 只存在此瀏覽器本機，不會上傳。取得：<a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent)">console.anthropic.com</a></div>
+      </div>
       <label class="ai-label">論文標題 Title</label>
       <input class="ai-input" type="text" id="aiTitle" placeholder="貼上完整論文標題…">
     </div>
@@ -591,7 +662,7 @@
       </div>
     </div>
 
-    <div class="ai-footer">
+    <div class="ai-footer" id="aiFooter">
       <button class="btn-ai-cancel" onclick="closeAiModal()">取消 Cancel</button>
       <div style="display:flex;gap:.6rem">
         <button class="btn-ai-run" id="aiRunBtn" onclick="runAiFill()">▶ AI 整理</button>
@@ -1413,15 +1484,50 @@ function savePaper(){
 // ═══════════════════════════════════════════
 //  AI Quick Fill
 // ═══════════════════════════════════════════
+function saveApiKey(){
+  const k=document.getElementById('aiKeyInput').value.trim();
+  if(!k){alert('請輸入 API Key');return;}
+  localStorage.setItem('anthropic_api_key',k);
+  document.getElementById('aiKeyStatus').textContent='✓ 已儲存';
+  document.getElementById('aiKeyInput').value='';
+  setTimeout(()=>document.getElementById('aiKeyStatus').textContent='',2000);
+}
+function clearApiKey(){
+  localStorage.removeItem('anthropic_api_key');
+  document.getElementById('aiKeyStatus').textContent='已清除';
+  setTimeout(()=>document.getElementById('aiKeyStatus').textContent='',2000);
+}
+function checkApiKeyStatus(){
+  const k=localStorage.getItem('anthropic_api_key');
+  const el=document.getElementById('aiKeyStatus');
+  if(el) el.textContent = k ? '✓ 已設定' : '（未設定）';
+}
 function openAiModal(){
-  document.getElementById('aiTitle').value='';
-  document.getElementById('aiAbstract').value='';
-  document.getElementById('aiEditFields').style.display='none';
-  document.getElementById('aiResultSection').style.display='none';
-  const rb=document.getElementById('aiResultBox');rb.style.display='none';rb.className='ai-result-box';rb.textContent='';
-  document.getElementById('aiApplyBtn').disabled=true;
-  aiParsed=null;
+  const hasKey = !!localStorage.getItem('anthropic_api_key');
+  document.getElementById('aiSetupScreen').style.display = hasKey ? 'none' : 'block';
+  document.getElementById('aiMainScreen').style.display  = hasKey ? 'block' : 'none';
+  document.getElementById('aiModalSub').style.display    = hasKey ? 'block' : 'none';
+  if(hasKey){
+    document.getElementById('aiTitle').value='';
+    document.getElementById('aiAbstract').value='';
+    document.getElementById('aiEditFields').style.display='none';
+    document.getElementById('aiResultSection').style.display='none';
+    const rb=document.getElementById('aiResultBox');rb.style.display='none';rb.className='ai-result-box';rb.textContent='';
+    document.getElementById('aiApplyBtn').disabled=true;
+    aiParsed=null;
+  }
+  document.getElementById('setupKeyInput') && (document.getElementById('setupKeyInput').value='');
+  document.getElementById('setupKeySaved') && (document.getElementById('setupKeySaved').style.display='none');
   document.getElementById('aiModalOverlay').classList.add('open');
+}
+function saveApiKeyFromSetup(){
+  const k=document.getElementById('setupKeyInput').value.trim();
+  if(!k.startsWith('sk-ant-')){alert('請輸入正確的 API Key（應以 sk-ant- 開頭）');return;}
+  localStorage.setItem('anthropic_api_key',k);
+  document.getElementById('setupKeySaved').style.display='block';
+  setTimeout(()=>{
+    openAiModal(); // re-open to switch to main screen
+  },1200);
 }
 function closeAiModal(){document.getElementById('aiModalOverlay').classList.remove('open')}
 
@@ -1451,9 +1557,23 @@ async function runAiFill(){
 - abstract_zh 請提供繁體中文版本`;
 
   try{
+    const apiKey=localStorage.getItem('anthropic_api_key')||'';
+    if(!apiKey){
+      document.getElementById('aiResultBox').style.display='block';
+      document.getElementById('aiResultBox').innerHTML='⚠ 請先在上方設定 Anthropic API Key';
+      document.getElementById('aiResultSection').style.display='block';
+      document.getElementById('aiRunBtn').disabled=false;
+      document.getElementById('aiRunBtn').textContent='▶ AI 整理';
+      return;
+    }
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-allow-browser':'true'
+      },
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
