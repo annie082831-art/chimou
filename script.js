@@ -527,9 +527,7 @@ function addProjFromModal(){
   showToast('\u5DF2\u65B0\u589E\u8CC7\u6599\u593E\u4E26\u52A0\u5165\uFF1A'+name,'success');
 }
 
-document.getElementById('projAssignOverlay').addEventListener('click',function(e){
-  if(e.target===document.getElementById('projAssignOverlay')) closeProjModal();
-});
+// Click-outside disabled for projAssign modal
 
 // Favourite toggle
 function toggleFav(id, e){
@@ -926,9 +924,7 @@ function applyAiResult(){
 }
 
 // Global events
-document.getElementById('delModalOverlay').addEventListener('click',function(e){
-  if(e.target===document.getElementById('delModalOverlay')) closeDelModal();
-});
+// Click-outside disabled for del modal
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){closeModal();closeAiModal();closeDelModal();}
   if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();document.getElementById('searchTitle').focus();}
@@ -1181,9 +1177,7 @@ function importAllCiteResults(){
   }
 }
 
-document.getElementById('citeModalOverlay').addEventListener('click', function(e){
-  if(e.target === document.getElementById('citeModalOverlay')) closeCiteModal();
-});
+// Click-outside disabled for cite modal — use cancel button to close
 
 // Smart scroll: redirect wheel events to left or right panel based on mouse X position
 (function(){
