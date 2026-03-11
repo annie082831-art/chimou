@@ -418,7 +418,7 @@ function buildCard(p){
     '<button class="fav-btn '+(p.favourite?'active':'')+'" onclick="toggleFav('+p.id+',event)" title="'+(p.favourite?'\u53D6\u6D88\u6700\u611B':'\u52A0\u5165\u6700\u611B')+'">'+favIcon+'</button>'+
     '<span class="paper-year">'+(p.year||'&#8212;')+'</span>'+
     '<span class="paper-journal">'+(p.journal||'')+'</span>'+
-    (p.hasPdf?'<span class="pdf-badge linked">\uD83D\uDCCE PDF</span>':'')+
+    (p.hasPdf?'<span class="pdf-badge linked">\uD83D\uDCCC PDF</span>':'')+
     '</div>'+
     '<div class="paper-title">'+p.title+'</div>'+
     '<div class="paper-authors">'+(p.authors||'')+'</div>'+
@@ -1184,3 +1184,23 @@ function importAllCiteResults(){
 document.getElementById('citeModalOverlay').addEventListener('click', function(e){
   if(e.target === document.getElementById('citeModalOverlay')) closeCiteModal();
 });
+
+// Smart scroll: redirect wheel events to left or right panel based on mouse X position
+(function(){
+  window.addEventListener('wheel', function(e){
+    var aside    = document.querySelector('aside');
+    var mainCol  = document.querySelector('.main-col');
+    if(!aside || !mainCol) return;
+    // Check if the event target is already inside a scrollable element (e.g. modal) — let it bubble normally
+    var target = e.target;
+    while(target && target !== document.body){
+      if(target === aside || target === mainCol) return; // already handled natively
+      target = target.parentElement;
+    }
+    // Determine which panel to scroll based on mouse X vs aside right edge
+    var asideRect = aside.getBoundingClientRect();
+    var panel = (e.clientX <= asideRect.right) ? aside : mainCol;
+    panel.scrollTop += e.deltaY;
+    e.preventDefault();
+  }, {passive: false});
+})();
