@@ -128,6 +128,7 @@
 <!-- Add / Edit Modal -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
+    <div class="modal-body">
     <div class="modal-title" id="modalTitle">新增論文 Add Paper</div>
     <div class="form-group">
       <label class="form-label">論文標題 <span class="en">Title *</span></label>
@@ -163,10 +164,11 @@
       <label class="form-label">重點摘記 <span class="en">Key Points（每行一條）</span></label>
       <textarea class="form-textarea" id="fKeyPoints" placeholder="每行一條重點…"></textarea>
     </div>
-    <div class="form-group">
+    <div class="form-group" style="padding-bottom:0.5rem">
       <label class="form-label">個人筆記 <span class="en">Notes</span></label>
       <textarea class="form-textarea" id="fNotes" placeholder="閱讀心得、相關論文、待追蹤問題…"></textarea>
     </div>
+    </div><!-- end modal-body -->
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()" style="color:var(--ink-light);border-color:var(--border)">取消</button>
       <button class="btn btn-primary" onclick="savePaper()">儲存 Save</button>
