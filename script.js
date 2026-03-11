@@ -998,7 +998,8 @@ function splitCitations(raw){
 }
 
 function parseNLM(text){
-  var doi = (text.match(/\bdoi:\s*([^\s.,;]+)/i)||[])[1] || '';
+  var doiRaw = (text.match(/\bdoi:\s*([^\s,;]+)/i)||[])[1] || '';
+  var doi = doiRaw.replace(/\.+$/, '');
   var pmid = (text.match(/\bPMID:\s*(\d+)/i)||[])[1] || '';
   var year = (text.match(/\b(19|20)\d{2}\b/)||[])[0] || '';
   var parts = text.split(/\.\s+/);
@@ -1036,7 +1037,8 @@ function parseAPA(text){
 function parseAMA(text){ return parseNLM(text.replace(/^\d+\.\s*/, '')); }
 
 function parseMLA(text){
-  var doi = (text.match(/\bdoi\.org\/([^\s.]+)/i)||text.match(/\bdoi:\s*([^\s.,;]+)/i)||[])[1] || '';
+  var doiRaw2 = (text.match(/\bdoi\.org\/([^\s,;]+)/i)||text.match(/\bdoi:\s*([^\s,;]+)/i)||[])[1] || '';
+  var doi = doiRaw2.replace(/\.+$/, '');
   var year = (text.match(/\b(19|20)\d{2}\b/)||[])[0] || '';
   var titleM = text.match(/"([^"]+)"/);
   var title = titleM ? titleM[1] : '';
