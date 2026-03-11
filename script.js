@@ -1179,29 +1179,47 @@ function importAllCiteResults(){
 
 // Click-outside disabled for cite modal — use cancel button to close
 
-// Smart scroll: redirect wheel events to left or right panel based on mouse X position
+// Smart scroll: redirect wheel events to correct scrollable panel
 (function(){
-  window.addEventListener('wheel', function(e){
-    // If the event originates inside any modal/overlay, let it scroll naturally
-    var modalIds = ['modalOverlay','citeModalOverlay','delModalOverlay','projAssignOverlay','aiModalOverlay'];
-    var target = e.target;
-    while(target && target !== document.body){
-      for(var i=0;i<modalIds.length;i++){
-        var el = document.getElementById(modalIds[i]);
-        if(el && el.contains(target)) return; // let browser handle it
+  // Find the closest scrollable ancestor
+  function findScrollable(el){
+    while(el && el !== document.body){
+      var style = window.getComputedStyle(el);
+      var overflow = style.overflowY;
+      if((overflow === 'auto' || overflow === 'scroll') && el.scrollHeight > el.clientHeight){
+        return el;
       }
-      target = target.parentElement;
+      el = el.parentElement;
     }
-    var aside    = document.querySelector('aside');
-    var mainCol  = document.querySelector('.main-col');
+    return null;
+  }
+
+  window.addEventListener('wheel', function(e){
+    var aside   = document.querySelector('aside');
+    var mainCol = document.querySelector('.main-col');
+
+    // Check if mouse is inside any open modal overlay
+    var modalOverlays = document.querySelectorAll('.modal-overlay.open, .ai-modal-overlay.open, .del-modal-overlay.open, .proj-modal-overlay.open, [id$="ModalOverlay"].open, [id="citeModalOverlay"].open');
+    for(var i = 0; i < modalOverlays.length; i++){
+      if(modalOverlays[i].contains(e.target)){
+        // Find the scrollable modal box inside and scroll it
+        var scrollable = findScrollable(e.target);
+        if(scrollable){
+          scrollable.scrollTop += e.deltaY;
+          e.preventDefault();
+        }
+        return;
+      }
+    }
+
     if(!aside || !mainCol) return;
-    // Check if already inside one of the panels
-    var t2 = e.target;
-    while(t2 && t2 !== document.body){
-      if(t2 === aside || t2 === mainCol) return;
-      t2 = t2.parentElement;
+    // If already inside a panel, let browser handle naturally
+    var t = e.target;
+    while(t && t !== document.body){
+      if(t === aside || t === mainCol) return;
+      t = t.parentElement;
     }
-    // Determine which panel to scroll based on mouse X vs aside right edge
+    // Route to left or right panel based on mouse X
     var asideRect = aside.getBoundingClientRect();
     var panel = (e.clientX <= asideRect.right) ? aside : mainCol;
     panel.scrollTop += e.deltaY;
