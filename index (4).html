@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+  <meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雞毛資料庫</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<div class="toast" id="toast"></div>
+<div class="browser-warn" id="browserWarn"></div>
+
+<!-- ── Login Overlay ── -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <img class="login-dog" style="width:110px;height:110px" src="data:image/png;base64,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" alt="雞毛">
+    <div class="login-title">雞毛資料庫</div>
+    <div class="login-sub">論文管理庫 · Research Archive</div>
+    <div id="loginConfigNotice" class="config-notice" style="display:none">
+      ⚠ 請先設定 Firebase 設定值（頁面底部 FIREBASE_CONFIG）
+    </div>
+    <button class="btn-google" onclick="signInWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.34-8.16 2.34-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      使用 Google 帳號登入
+    </button>
+    <div class="login-note">登入後資料將同步至雲端<br>可在任何裝置使用（PDF 連結僅限本機）</div>
+    <div class="login-loading" id="loginLoading" style="display:none">登入中…</div>
+  </div>
+</div>
+
+<header>
+  <div class="logo" style="display:flex;align-items:center;gap:.7rem">
+    <img src="data:image/png;base64,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" alt="🐶" style="height:46px;width:46px;object-fit:contain;border-radius:50%;flex-shrink:0">
+    <div>
+      <span class="logo-title" id="logoTitle">雞毛資料庫</span>
+      <span class="logo-sub" style="display:block">論文管理庫</span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="user-chip" id="userChip"></div>
+    <button class="btn-home" onclick="goHome()" title="回到主畫面">🏠</button>
+    <button class="btn btn-ai" onclick="openAiModal()">✦ AI 快速整理</button>
+    <button class="btn btn-ghost" onclick="exportJSON()">匯出</button>
+    <label class="btn btn-ghost" style="cursor:pointer;">匯入<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label>
+    <button class="btn btn-primary" onclick="openModal()">＋ 新增論文</button>
+  </div>
+</header>
+
+<div class="container">
+  <!-- ── Sidebar ── -->
+  <aside>
+    <!-- Search -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">搜尋 Search</div>
+      <div class="search-field-wrap">
+        <div class="search-field-row">
+          <span class="search-field-label">標題 Title</span>
+          <input type="text" id="searchTitle" placeholder="關鍵字…" oninput="onSearchInput(this)">
+        </div>
+        <div class="search-field-row">
+          <span class="search-field-label">作者 Authors</span>
+          <input type="text" id="searchAuthors" placeholder="作者姓名…" oninput="onSearchInput(this)">
+        </div>
+        <div class="search-field-row">
+          <span class="search-field-label">摘要 Abstract</span>
+          <input type="text" id="searchAbstract" placeholder="關鍵字…" oninput="onSearchInput(this)">
+        </div>
+        <div class="search-field-row">
+          <span class="search-field-label">筆記 Notes</span>
+          <input type="text" id="searchNotes" placeholder="關鍵字…" oninput="onSearchInput(this)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Tags -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">標籤篩選 Tags</div>
+      <div class="selected-tags-header" id="selectedTagsHeader">
+        <span>已選取 Selected</span>
+        <button class="clear-tags-btn" onclick="clearTags()">✕ 清除全部</button>
+      </div>
+      <div class="selected-tags-strip" id="selectedTagsStrip"></div>
+      <input class="tag-search" type="text" id="tagSearchInput" placeholder="搜尋標籤以新增…" oninput="renderTagFilters()">
+      <div class="tag-list" id="tagFilters"></div>
+    </div>
+
+    <!-- Sort -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">排序 Sort</div>
+      <select class="sort-select" id="sortSelect" onchange="renderPapers()">
+        <option value="fav-first">⭐ 最愛優先</option>
+        <option value="date-desc">新增日期（最新）</option>
+        <option value="date-asc">新增日期（最舊）</option>
+        <option value="year-desc">發表年份（最新）</option>
+        <option value="year-asc">發表年份（最舊）</option>
+        <option value="title">標題 A→Z</option>
+      </select>
+    </div>
+
+    <!-- Projects / Folders -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">專案資料夾 Projects</div>
+      <!-- Folder search -->
+      <input class="tag-search" type="text" id="projSearchInput" placeholder="搜尋資料夾…" oninput="renderProjects()" style="margin-bottom:.5rem">
+      <!-- Add new folder -->
+      <div class="project-actions-row" style="margin-bottom:.6rem">
+        <input class="proj-input" type="text" id="newProjInput" placeholder="新增資料夾名稱…" onkeydown="if(event.key==='Enter')addProject()">
+        <button class="btn-proj-add" onclick="addProject()">＋</button>
+      </div>
+      <!-- Quick filter buttons (全部/最愛/PDF) -->
+      <div class="quick-filter-group" id="quickFilterGroup" style="margin-bottom:.5rem"></div>
+      <!-- Custom folders -->
+      <div class="project-list" id="projectList"></div>
+    </div>
+
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main-col">
+    <div class="toolbar">
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:.4rem">
+        <span class="result-count" id="resultCount"></span>
+        <span id="activeProjectTag"></span>
+      </div>
+    </div>
+    <div class="papers-grid" id="papersGrid"></div>
+    <div class="pagination" id="pagination"></div>
+  </main>
+</div>
+
+<!-- ═══ Add / Edit Modal ═══ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">新增論文 Add Paper</div>
+    <div class="form-group">
+      <label class="form-label">論文標題 <span class="en">Title *</span></label>
+      <input class="form-input" type="text" id="fTitle" placeholder="完整論文標題">
+    </div>
+    <div class="form-group">
+      <label class="form-label">作者 <span class="en">Authors</span></label>
+      <input class="form-input" type="text" id="fAuthors" placeholder="Author A, Author B, et al.">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">發表年份 <span class="en">Year</span></label>
+        <input class="form-input" type="number" id="fYear" placeholder="2024" min="1900" max="2099">
+      </div>
+      <div class="form-group">
+        <label class="form-label">期刊 / 會議 <span class="en">Journal</span></label>
+        <input class="form-input" type="text" id="fJournal" placeholder="Nature, NeurIPS…">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">DOI / URL</label>
+      <input class="form-input" type="text" id="fDoi" placeholder="https://doi.org/…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">標籤 <span class="en">Tags（逗號分隔）</span></label>
+      <input class="form-input" type="text" id="fTags" placeholder="neuroscience, SHH, NLP, ESG…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">摘要 <span class="en">Abstract</span></label>
+      <textarea class="form-textarea" id="fAbstract" placeholder="論文摘要或中文翻譯…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">重點摘記 <span class="en">Key Points（每行一條）</span></label>
+      <textarea class="form-textarea" id="fKeyPoints" placeholder="每行一條重點…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">個人筆記 <span class="en">Notes</span></label>
+      <textarea class="form-textarea" id="fNotes" placeholder="閱讀心得、相關論文、待追蹤問題…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()" style="color:var(--ink-light);border-color:var(--border)">取消</button>
+      <button class="btn btn-primary" onclick="savePaper()">儲存 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Delete Confirm Modal ═══ -->
+<div class="del-modal-overlay" id="delModalOverlay">
+  <div class="del-modal">
+    <div class="del-modal-warn">⚠ 確認刪除此論文？此操作無法復原。</div>
+    <div class="del-paper-preview" id="delPaperPreview"></div>
+    <div class="del-modal-footer">
+      <button class="btn-del-cancel" onclick="closeDelModal()">取消 Cancel</button>
+      <button class="btn-del-confirm" onclick="confirmDeletePaper()">確認刪除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Project Assign Modal ═══ -->
+<div class="proj-modal-overlay" id="projAssignOverlay">
+  <div class="proj-modal">
+    <div class="proj-modal-title">📁 加入 / 移出資料夾</div>
+    <input class="proj-modal-search" type="text" id="projAssignSearch" placeholder="搜尋資料夾…" oninput="renderProjModalList()">
+    <div class="proj-modal-add-row">
+      <input class="proj-modal-new-input" type="text" id="projAssignNew" placeholder="新增資料夾並加入…" onkeydown="if(event.key==='Enter')addProjFromModal()">
+      <button class="proj-modal-add-btn" onclick="addProjFromModal()">＋ 新增</button>
+    </div>
+    <div class="proj-modal-list" id="projAssignList"></div>
+    <div class="proj-modal-footer">
+      <button class="proj-modal-close" onclick="closeProjModal()">完成 Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AI Quick Fill Modal ═══ -->
+<div class="ai-modal-overlay" id="aiModalOverlay">
+  <div class="ai-modal">
+    <div class="ai-modal-title">✦ AI 快速整理論文</div>
+    <div class="ai-modal-sub" id="aiModalSub">貼上標題與摘要，AI 自動提取關鍵資訊 · AI extracts key info from title &amp; abstract</div>
+
+    <!-- ── Setup Screen (shown when no key) ── -->
+    <div id="aiSetupScreen">
+      <div class="setup-notice">
+        ⚠ 尚未設定 API Key。以下兩種方式皆需少量付費，每次整理論文費用極低（約 NT$0.03 以下）。<br>Key 只存在你自己的瀏覽器，不會上傳或共享。
+      </div>
+
+      <!-- Tab switcher -->
+      <div style="display:flex;gap:0;margin-bottom:1.5rem;border:1px solid var(--border)">
+        <button id="tabGemini" onclick="switchSetupTab('gemini')" style="flex:1;padding:.55rem;font-family:var(--mono);font-size:.72rem;background:var(--accent);color:white;border:none;cursor:pointer;letter-spacing:.04em">
+          ✦ Google Gemini
+        </button>
+        <button id="tabAnthropic" onclick="switchSetupTab('anthropic')" style="flex:1;padding:.55rem;font-family:var(--mono);font-size:.72rem;background:white;color:var(--ink-light);border:none;border-left:1px solid var(--border);cursor:pointer;letter-spacing:.04em">
+          ✦ Anthropic Claude
+        </button>
+      </div>
+
+      <!-- Gemini tab -->
+      <div id="setupTabGemini">
+        <div class="setup-step">
+          <div class="setup-step-num">1</div>
+          <div class="setup-step-body">
+            <div class="setup-step-title">前往 Google AI Studio（需綁定信用卡）</div>
+            <div class="setup-step-desc">開啟 <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a>，用 Google 帳號登入。台灣地區需至 <a href="https://console.cloud.google.com/billing" target="_blank">Google Cloud Billing</a> 啟用帳單（綁定信用卡），費用極低。</div>
+          </div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-step-num">2</div>
+          <div class="setup-step-body">
+            <div class="setup-step-title">建立 API Key</div>
+            <div class="setup-step-desc">點「Create API Key」→ 選任意 Google Cloud 專案或建立新的 → 複製產生的 Key（格式為 <code>AIzaSy...</code>）。</div>
+          </div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-step-num">3</div>
+          <div class="setup-step-body">
+            <div class="setup-step-title">貼入下方並儲存</div>
+            <div class="setup-key-row">
+              <input class="setup-key-input" type="password" id="setupGeminiInput" placeholder="AIzaSy…">
+              <button class="setup-key-btn" onclick="saveApiKeyFromSetup('gemini')">儲存並開始使用</button>
+            </div>
+            <div class="setup-key-saved" id="setupKeySaved">✓ 已儲存！正在開啟 AI 功能…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Anthropic tab -->
+      <div id="setupTabAnthropic" style="display:none">
+        <div class="setup-step">
+          <div class="setup-step-num">1</div>
+          <div class="setup-step-body">
+            <div class="setup-step-title">申請 Anthropic 帳號</div>
+            <div class="setup-step-desc">前往 <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> 用 Google 帳號登入，至 Billing 儲值最低 $5 美元（約 NT$160）。每次整理論文約 $0.001，可整理數千篇。</div>
+          </div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-step-num">2</div>
+          <div class="setup-step-body">
+            <div class="setup-step-title">取得 API Key</div>
+            <div class="setup-step-desc">前往 <a href="https://console.anthropic.com/settings/keys" target="_blank">Settings → API Keys</a>，點「Create Key」，複製（格式為 <code>sk-ant-...</code>）。</div>
+          </div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-step-num">3</div>
+          <div class="setup-step-body">
+            <div class="setup-step-title">貼入下方並儲存</div>
+            <div class="setup-key-row">
+              <input class="setup-key-input" type="password" id="setupAnthropicInput" placeholder="sk-ant-api03-…">
+              <button class="setup-key-btn" onclick="saveApiKeyFromSetup('anthropic')">儲存並開始使用</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="setup-divider">
+      <div style="text-align:right">
+        <button class="btn-ai-cancel" onclick="closeAiModal()">關閉</button>
+      </div>
+    </div>
+
+    <!-- ── Main AI Screen ── -->
+    <div id="aiMainScreen">
+
+    <div class="form-group">
+      <div id="aiKeySection" style="margin-bottom:1rem;padding:.65rem .75rem;background:#f5f0e8;border:1px solid var(--border);font-family:var(--mono);font-size:.7rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+        <span id="aiKeyStatus" style="color:#2e7d32;flex:1">⏳ 偵測中…</span>
+        <button onclick="openAiSetup()" style="padding:.28rem .65rem;background:transparent;color:var(--ink-light);border:1px solid var(--border);cursor:pointer;font-family:var(--mono);font-size:.65rem">更換 Key</button>
+        <button onclick="clearApiKey()" style="padding:.28rem .65rem;background:transparent;color:var(--ink-light);border:1px solid var(--border);cursor:pointer;font-family:var(--mono);font-size:.65rem">清除</button>
+      </div>
+      <label class="ai-label">論文標題 Title</label>
+      <input class="ai-input" type="text" id="aiTitle" placeholder="貼上完整論文標題…">
+    </div>
+    <div class="form-group" style="margin-top:1rem">
+      <label class="ai-label">摘要 Abstract</label>
+      <textarea class="ai-textarea" id="aiAbstract" placeholder="貼上英文或中文摘要…"></textarea>
+    </div>
+
+    <div style="margin-top:1.25rem;display:none" id="aiResultSection">
+      <div class="ai-result-label">AI 整理結果 · Result</div>
+      <!-- status bar: loading / error -->
+      <div class="ai-result-box" id="aiResultBox" style="display:none"></div>
+      <!-- editable fields (always in DOM, shown after success) -->
+      <div id="aiEditFields" style="display:none;padding:.25rem 0;line-height:2">
+        <div class="ai-colon-row"><span class="ai-colon-key">標題：</span><input class="ai-colon-val" type="text" id="aiEditTitle"></div>
+        <div class="ai-colon-row"><span class="ai-colon-key">作者：</span><input class="ai-colon-val" type="text" id="aiEditAuthors"></div>
+        <div class="ai-colon-row"><span class="ai-colon-key">年份：</span><input class="ai-colon-val" type="text" id="aiEditYear" style="max-width:6rem"></div>
+        <div class="ai-colon-row"><span class="ai-colon-key">期刊：</span><input class="ai-colon-val" type="text" id="aiEditJournal"></div>
+        <div class="ai-colon-row"><span class="ai-colon-key">標籤：</span><input class="ai-colon-val" type="text" id="aiEditTags" placeholder="逗號分隔…"></div>
+        <div class="ai-colon-row ai-colon-block"><span class="ai-colon-key">摘要（中文）：</span><textarea class="ai-colon-val ai-colon-area" id="aiEditAbstract"></textarea></div>
+        <div class="ai-colon-row ai-colon-block"><span class="ai-colon-key">重點：</span><textarea class="ai-colon-val ai-colon-area" id="aiEditKeyPoints" placeholder="每行一條…"></textarea></div>
+      </div>
+    </div>
+
+    <div class="ai-footer" id="aiFooter">
+      <button class="btn-ai-cancel" onclick="closeAiModal()">取消 Cancel</button>
+      <div style="display:flex;gap:.6rem">
+        <button class="btn-ai-run" id="aiRunBtn" onclick="runAiFill()">▶ AI 整理</button>
+        <button class="btn-ai-apply" id="aiApplyBtn" disabled onclick="applyAiResult()">✓ 匯入資料庫</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
