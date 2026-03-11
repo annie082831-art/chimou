@@ -616,7 +616,7 @@ function linkPdf(id,e){
     return saveHandle(id,handle).then(function(){
       var p=papers.find(function(x){return x.id===id;});
       if(p){p.hasPdf=true;p.pdfName=handle.name;savePapers(papers);}
-      hideProgress();renderAll();
+      hideProgress();renderAll();expandCard(id);
       showToast('\uD83D\uDD17 \u5DF2\u9023\u7D50','success');
     });
   }).catch(function(err){hideProgress();if(err.name!=='AbortError')showToast('\u9023\u7D50\u5931\u6557\uFF1A'+(err.message||err.name),'error');});
@@ -666,7 +666,7 @@ function unlinkPdf(id,e){
   deleteHandle(id).then(function(){
     var p=papers.find(function(x){return x.id===id;});
     if(p){p.hasPdf=false;p.pdfName=null;savePapers(papers);}
-    renderAll();showToast('\uD83D\uDD17 \u5DF2\u79FB\u9664\u9023\u7D50','info');
+    renderAll();expandCard(id);showToast('\uD83D\uDD17 \u5DF2\u79FB\u9664\u9023\u7D50','info');
   });
 }
 
@@ -1182,14 +1182,24 @@ function importAllCiteResults(){
 // Smart scroll: redirect wheel events to left or right panel based on mouse X position
 (function(){
   window.addEventListener('wheel', function(e){
+    // If the event originates inside any modal/overlay, let it scroll naturally
+    var modalIds = ['modalOverlay','citeModalOverlay','delModalOverlay','projAssignOverlay','aiModalOverlay'];
+    var target = e.target;
+    while(target && target !== document.body){
+      for(var i=0;i<modalIds.length;i++){
+        var el = document.getElementById(modalIds[i]);
+        if(el && el.contains(target)) return; // let browser handle it
+      }
+      target = target.parentElement;
+    }
     var aside    = document.querySelector('aside');
     var mainCol  = document.querySelector('.main-col');
     if(!aside || !mainCol) return;
-    // Check if the event target is already inside a scrollable element (e.g. modal) — let it bubble normally
-    var target = e.target;
-    while(target && target !== document.body){
-      if(target === aside || target === mainCol) return; // already handled natively
-      target = target.parentElement;
+    // Check if already inside one of the panels
+    var t2 = e.target;
+    while(t2 && t2 !== document.body){
+      if(t2 === aside || t2 === mainCol) return;
+      t2 = t2.parentElement;
     }
     // Determine which panel to scroll based on mouse X vs aside right edge
     var asideRect = aside.getBoundingClientRect();
