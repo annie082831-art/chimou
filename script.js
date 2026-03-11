@@ -1205,7 +1205,7 @@ function importAllCiteResults(){
         // Find the scrollable modal box inside and scroll it
         var scrollable = findScrollable(e.target);
         if(scrollable){
-          scrollable.scrollTop += e.deltaY;
+          scrollable.scrollTop += e.deltaY * 0.5;
           e.preventDefault();
         }
         return;
@@ -1222,7 +1222,7 @@ function importAllCiteResults(){
     // Route to left or right panel based on mouse X
     var asideRect = aside.getBoundingClientRect();
     var panel = (e.clientX <= asideRect.right) ? aside : mainCol;
-    panel.scrollTop += e.deltaY;
+    panel.scrollTop += e.deltaY * 0.5;
     e.preventDefault();
   }, {passive: false});
 })();
