@@ -46,7 +46,6 @@
   <div class="header-actions">
     <div class="user-chip" id="userChip"></div>
     <button class="btn-home" onclick="goHome()" title="回到主畫面">🏠</button>
-    <button class="btn btn-ai" onclick="openAiModal()">✦ AI 快速整理</button>
     <button class="btn btn-cite" onclick="openCiteModal()">📋 引用匯入</button>
     <button class="btn btn-primary" onclick="openModal()">＋ 新增論文</button>
   </div>
@@ -200,123 +199,6 @@
     <div class="proj-modal-list" id="projAssignList"></div>
     <div class="proj-modal-footer">
       <button class="proj-modal-close" onclick="closeProjModal()">完成 Done</button>
-    </div>
-  </div>
-</div>
-
-<!-- AI Quick Fill Modal -->
-<div class="ai-modal-overlay" id="aiModalOverlay">
-  <div class="ai-modal">
-    <div class="ai-modal-title">✦ AI 快速整理論文</div>
-    <div class="ai-modal-sub" id="aiModalSub">貼上標題與摘要，AI 自動提取關鍵資訊 · AI extracts key info from title &amp; abstract</div>
-
-    <!-- Setup Screen -->
-    <div id="aiSetupScreen">
-      <div class="setup-notice">
-        ⚠ 尚未設定 API Key。以下兩種方式皆需少量付費，每次整理論文費用極低（約 NT$0.03 以下）。<br>Key 只存在你自己的瀏覽器，不會上傳或共享。
-      </div>
-      <div style="display:flex;gap:0;margin-bottom:1.5rem;border:1px solid var(--border)">
-        <button id="tabGemini" onclick="switchSetupTab('gemini')" style="flex:1;padding:.55rem;font-family:var(--mono);font-size:.72rem;background:var(--accent);color:white;border:none;cursor:pointer;letter-spacing:.04em">
-          ✦ Google Gemini
-        </button>
-        <button id="tabAnthropic" onclick="switchSetupTab('anthropic')" style="flex:1;padding:.55rem;font-family:var(--mono);font-size:.72rem;background:white;color:var(--ink-light);border:none;border-left:1px solid var(--border);cursor:pointer;letter-spacing:.04em">
-          ✦ Anthropic Claude
-        </button>
-      </div>
-      <div id="setupTabGemini">
-        <div class="setup-step">
-          <div class="setup-step-num">1</div>
-          <div class="setup-step-body">
-            <div class="setup-step-title">前往 Google AI Studio（需綁定信用卡）</div>
-            <div class="setup-step-desc">開啟 <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a>，用 Google 帳號登入。</div>
-          </div>
-        </div>
-        <div class="setup-step">
-          <div class="setup-step-num">2</div>
-          <div class="setup-step-body">
-            <div class="setup-step-title">建立 API Key</div>
-            <div class="setup-step-desc">點「Create API Key」，複製產生的 Key（格式為 <code>AIzaSy...</code>）。</div>
-          </div>
-        </div>
-        <div class="setup-step">
-          <div class="setup-step-num">3</div>
-          <div class="setup-step-body">
-            <div class="setup-step-title">貼入下方並儲存</div>
-            <div class="setup-key-row">
-              <input class="setup-key-input" type="password" id="setupGeminiInput" placeholder="AIzaSy…">
-              <button class="setup-key-btn" onclick="saveApiKeyFromSetup('gemini')">儲存並開始使用</button>
-            </div>
-            <div class="setup-key-saved" id="setupKeySaved">✓ 已儲存！正在開啟 AI 功能…</div>
-          </div>
-        </div>
-      </div>
-      <div id="setupTabAnthropic" style="display:none">
-        <div class="setup-step">
-          <div class="setup-step-num">1</div>
-          <div class="setup-step-body">
-            <div class="setup-step-title">申請 Anthropic 帳號</div>
-            <div class="setup-step-desc">前往 <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> 登入，至 Billing 儲值最低 $5 美元。</div>
-          </div>
-        </div>
-        <div class="setup-step">
-          <div class="setup-step-num">2</div>
-          <div class="setup-step-body">
-            <div class="setup-step-title">取得 API Key</div>
-            <div class="setup-step-desc">前往 <a href="https://console.anthropic.com/settings/keys" target="_blank">Settings → API Keys</a>，點「Create Key」，複製（格式為 <code>sk-ant-...</code>）。</div>
-          </div>
-        </div>
-        <div class="setup-step">
-          <div class="setup-step-num">3</div>
-          <div class="setup-step-body">
-            <div class="setup-step-title">貼入下方並儲存</div>
-            <div class="setup-key-row">
-              <input class="setup-key-input" type="password" id="setupAnthropicInput" placeholder="sk-ant-api03-…">
-              <button class="setup-key-btn" onclick="saveApiKeyFromSetup('anthropic')">儲存並開始使用</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <hr class="setup-divider">
-      <div style="text-align:right">
-        <button class="btn-ai-cancel" onclick="closeAiModal()">關閉</button>
-      </div>
-    </div>
-
-    <!-- Main AI Screen -->
-    <div id="aiMainScreen">
-      <div class="form-group">
-        <div id="aiKeySection" style="margin-bottom:1rem;padding:.65rem .75rem;background:#f5f0e8;border:1px solid var(--border);font-family:var(--mono);font-size:.7rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
-          <span id="aiKeyStatus" style="color:#2e7d32;flex:1">⏳ 偵測中…</span>
-          <button onclick="openAiSetup()" style="padding:.28rem .65rem;background:transparent;color:var(--ink-light);border:1px solid var(--border);cursor:pointer;font-family:var(--mono);font-size:.65rem">更換 Key</button>
-          <button onclick="clearApiKey()" style="padding:.28rem .65rem;background:transparent;color:var(--ink-light);border:1px solid var(--border);cursor:pointer;font-family:var(--mono);font-size:.65rem">清除</button>
-        </div>
-        <label class="ai-label">論文標題 Title</label>
-        <input class="ai-input" type="text" id="aiTitle" placeholder="貼上完整論文標題…">
-      </div>
-      <div class="form-group" style="margin-top:1rem">
-        <label class="ai-label">摘要 Abstract</label>
-        <textarea class="ai-textarea" id="aiAbstract" placeholder="貼上英文或中文摘要…"></textarea>
-      </div>
-      <div style="margin-top:1.25rem;display:none" id="aiResultSection">
-        <div class="ai-result-label">AI 整理結果 · Result</div>
-        <div class="ai-result-box" id="aiResultBox" style="display:none"></div>
-        <div id="aiEditFields" style="display:none;padding:.25rem 0;line-height:2">
-          <div class="ai-colon-row"><span class="ai-colon-key">標題：</span><input class="ai-colon-val" type="text" id="aiEditTitle"></div>
-          <div class="ai-colon-row"><span class="ai-colon-key">作者：</span><input class="ai-colon-val" type="text" id="aiEditAuthors"></div>
-          <div class="ai-colon-row"><span class="ai-colon-key">年份：</span><input class="ai-colon-val" type="text" id="aiEditYear" style="max-width:6rem"></div>
-          <div class="ai-colon-row"><span class="ai-colon-key">期刊：</span><input class="ai-colon-val" type="text" id="aiEditJournal"></div>
-          <div class="ai-colon-row"><span class="ai-colon-key">標籤：</span><input class="ai-colon-val" type="text" id="aiEditTags" placeholder="逗號分隔…"></div>
-          <div class="ai-colon-row ai-colon-block"><span class="ai-colon-key">摘要（中文）：</span><textarea class="ai-colon-val ai-colon-area" id="aiEditAbstract"></textarea></div>
-          <div class="ai-colon-row ai-colon-block"><span class="ai-colon-key">重點：</span><textarea class="ai-colon-val ai-colon-area" id="aiEditKeyPoints" placeholder="每行一條…"></textarea></div>
-        </div>
-      </div>
-      <div class="ai-footer" id="aiFooter">
-        <button class="btn-ai-cancel" onclick="closeAiModal()">取消 Cancel</button>
-        <div style="display:flex;gap:.6rem">
-          <button class="btn-ai-run" id="aiRunBtn" onclick="runAiFill()">▶ AI 整理</button>
-          <button class="btn-ai-apply" id="aiApplyBtn" disabled onclick="applyAiResult()">✓ 匯入資料庫</button>
-        </div>
-      </div>
     </div>
   </div>
 </div>
