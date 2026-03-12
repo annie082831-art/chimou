@@ -235,7 +235,8 @@ function renderProjects(){
 
 // Tags sidebar
 var showAllTags = false;
-var TAGS_DEFAULT_SHOW = 20;
+var TAGS_DEFAULT_SHOW = 5;
+var TAGS_EXPANDED_SHOW = 20;
 
 function getAllTags(){
   var tagCount={};
@@ -251,9 +252,6 @@ function renderTagFilters(){
   var query=document.getElementById('tagSearchInput').value.toLowerCase();
   var allTags=getAllTags();
   var candidates = allTags.filter(function(t){return !activeTags.has(t);});
-  if(query) candidates=candidates.filter(function(t){return t.toLowerCase().includes(query);});
-  var visibleCandidates = (showAllTags||query) ? candidates : candidates.slice(0,TAGS_DEFAULT_SHOW);
-  var hasMore = !query && candidates.length > TAGS_DEFAULT_SHOW;
   var strip = document.getElementById('selectedTagsStrip');
   var header = document.getElementById('selectedTagsHeader');
   if(strip){
@@ -261,9 +259,27 @@ function renderTagFilters(){
       Array.from(activeTags).map(function(t){return '<span class="selected-tag-pill">'+t+' <span class="rm" onclick="removeTag(\''+t+'\')">&#x2715;</span></span>';}).join('');
   }
   if(header){ header.classList.toggle('show', activeTags.size>0); }
-  var tagBtns=visibleCandidates.map(function(t){return '<span class="tag-filter" onclick="addTag(\''+t+'\')">'+t+'</span>';}).join('');
-  var moreBtn= hasMore
-    ? '<button class="tag-show-more" onclick="toggleShowAllTags()">'+(showAllTags?'&#9650; \u6536\u8D77':'&#9660; \u986F\u793A\u5E38\u7528 ('+candidates.length+')')+'</button>'
+
+  // Search mode: require at least 2 characters
+  if(query){
+    if(query.length < 2){
+      document.getElementById('tagFilters').innerHTML = '';
+      return;
+    }
+    var searchResults = candidates.filter(function(t){return t.toLowerCase().includes(query);});
+    document.getElementById('tagFilters').innerHTML = searchResults.map(function(t){
+      return '<span class="tag-filter" onclick="addTag(\''+t+'\')">'+t+'</span>';
+    }).join('');
+    return;
+  }
+
+  // Normal mode: 5 default, 20 when expanded
+  var limit = showAllTags ? TAGS_EXPANDED_SHOW : TAGS_DEFAULT_SHOW;
+  var visibleCandidates = candidates.slice(0, limit);
+  var hasMore = candidates.length > TAGS_DEFAULT_SHOW;
+  var tagBtns = visibleCandidates.map(function(t){return '<span class="tag-filter" onclick="addTag(\''+t+'\')">'+t+'</span>';}).join('');
+  var moreBtn = hasMore
+    ? '<button class="tag-show-more" onclick="toggleShowAllTags()">'+(showAllTags?'&#9650; \u6536\u8D77':'&#9660; \u986F\u793A\u5E38\u7528')+'</button>'
     : '';
   document.getElementById('tagFilters').innerHTML = tagBtns + moreBtn;
 }
