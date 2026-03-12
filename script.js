@@ -144,7 +144,6 @@ var activeTags   = new Set();
 var currentPage  = 1;
 var PAGE_SIZE    = 20;
 var activeProject = null;
-var aiParsed     = null;
 
 function initAppData(){
   return loadFromCloud().then(function(fromCloud){
@@ -236,17 +235,16 @@ function renderProjects(){
 
 // Tags sidebar
 var showAllTags = false;
-var TAGS_DEFAULT_SHOW = 3;
+var TAGS_DEFAULT_SHOW = 20;
 
 function getAllTags(){
-  var tagDate={};
+  var tagCount={};
   papers.forEach(function(p){
     p.tags.forEach(function(t){
-      var d=new Date(p.addedAt).getTime();
-      if(!tagDate[t]||d>tagDate[t])tagDate[t]=d;
+      tagCount[t]=(tagCount[t]||0)+1;
     });
   });
-  return Object.entries(tagDate).sort(function(a,b){return b[1]-a[1];}).map(function(e){return e[0];});
+  return Object.entries(tagCount).sort(function(a,b){return b[1]-a[1];}).map(function(e){return e[0];});
 }
 
 function renderTagFilters(){
@@ -265,10 +263,9 @@ function renderTagFilters(){
   if(header){ header.classList.toggle('show', activeTags.size>0); }
   var tagBtns=visibleCandidates.map(function(t){return '<span class="tag-filter" onclick="addTag(\''+t+'\')">'+t+'</span>';}).join('');
   var moreBtn= hasMore
-    ? '<button class="tag-show-more" onclick="toggleShowAllTags()">'+(showAllTags?'&#9650; \u6536\u8D77':'&#9660; \u986F\u793A\u5168\u90E8 ('+candidates.length+')')+'</button>'
+    ? '<button class="tag-show-more" onclick="toggleShowAllTags()">'+(showAllTags?'&#9650; \u6536\u8D77':'&#9660; \u986F\u793A\u5E38\u7528 ('+candidates.length+')')+'</button>'
     : '';
-  var allBtn = '<span class="tag-filter '+(activeTags.size===0?'active':'')+'" onclick="clearTags()">\u5168\u90E8</span>';
-  document.getElementById('tagFilters').innerHTML = allBtn + tagBtns + moreBtn;
+  document.getElementById('tagFilters').innerHTML = tagBtns + moreBtn;
 }
 
 function toggleShowAllTags(){ showAllTags=!showAllTags; renderTagFilters(); }
@@ -432,10 +429,10 @@ function buildCard(p){
         '<div class="section-body" id="secKPBody_'+p.id+'">'+
         (kpHtml||'<div style="font-size:.8rem;color:var(--ink-light);font-style:italic">\u5C1A\u7121\u91CD\u9EDE</div>')+
         '</div></div>'+
-      '<div class="section-wrap" id="secNotes_'+p.id+'">'+
+      '<div class="section-wrap collapsed" id="secNotes_'+p.id+'">'+
         '<div class="section-label">\u500B\u4EBA\u7B46\u8A18 <span class="en">Notes</span>'+
-        '<button class="section-toggle" onclick="toggleSection(\'secNotes_'+p.id+'\',event)">\u25BC</button></div>'+
-        '<div class="section-body" id="secNotesBody_'+p.id+'">'+
+        '<button class="section-toggle" onclick="toggleSection(\'secNotes_'+p.id+'\',event)">\u25B6</button></div>'+
+        '<div class="section-body collapsed" id="secNotesBody_'+p.id+'">'+
         '<textarea class="notes-area" id="notes_'+p.id+'" onclick="event.stopPropagation()" onchange="updateNotes('+p.id+')" placeholder="\u95B1\u8B80\u5FC3\u5F97\u3001\u76F8\u95DC\u8AD6\u6587\u3001\u5F85\u8FFD\u8E64\u554F\u984C\u2026">'+(p.notes||'')+'</textarea>'+
         '</div></div>'+
       '<div class="section-wrap collapsed" id="secPdf_'+p.id+'">'+
@@ -571,9 +568,15 @@ function collapseCard(id,e){
 }
 function doiUrl(doi){
   doi=doi.trim();
-  if(doi.startsWith('http://doi.org/')) return doi.replace('http://doi.org/','https://doi.org/');
-  if(doi.startsWith('https://doi.org/')) return doi;
-  if(doi.startsWith('10.')) return 'https://doi.org/'+doi;
+  // Remove common prefixes like "doi: " or "DOI: "
+  doi=doi.replace(/^doi:\s*/i,'');
+  // Remove trailing period or comma
+  doi=doi.replace(/[.,;]+$/,'');
+  if(doi.startsWith('http://doi.org/'))    return doi.replace('http://doi.org/','https://doi.org/');
+  if(doi.startsWith('https://doi.org/'))   return doi;
+  if(doi.startsWith('http://dx.doi.org/')) return doi.replace('http://dx.doi.org/','https://doi.org/');
+  if(doi.startsWith('https://dx.doi.org/'))return doi.replace('https://dx.doi.org/','https://doi.org/');
+  if(doi.startsWith('10.'))                return 'https://doi.org/'+doi;
   return doi;
 }
 function onSearchInput(el){
@@ -756,177 +759,11 @@ function savePaper(){
   showToast('\u8AD6\u6587\u5DF2\u5132\u5B58','success');
 }
 
-// AI Quick Fill
-function getStoredKey(){ return localStorage.getItem('gemini_api_key') || localStorage.getItem('anthropic_api_key') || ''; }
-function getKeyType(){
-  if(localStorage.getItem('gemini_api_key')) return 'gemini';
-  if(localStorage.getItem('anthropic_api_key')) return 'anthropic';
-  return null;
-}
-function saveApiKey(){}
-function clearApiKey(){
-  localStorage.removeItem('gemini_api_key');
-  localStorage.removeItem('anthropic_api_key');
-  checkApiKeyStatus();
-  openAiSetup();
-}
-function checkApiKeyStatus(){
-  var el=document.getElementById('aiKeyStatus');
-  if(!el) return;
-  var type=getKeyType();
-  if(type==='gemini') el.textContent='\uD83D\uDFE2 Google Gemini Key \u5DF2\u8A2D\u5B9A (\u2736 Gemini)';
-  else if(type==='anthropic') el.textContent='\uD83D\uDFE2 Anthropic Claude Key \u5DF2\u8A2D\u5B9A';
-  else el.textContent='\u26A0 \u5C1A\u672A\u8A2D\u5B9A Key';
-}
-function switchSetupTab(tab){
-  document.getElementById('setupTabGemini').style.display    = tab==='gemini'    ? 'block' : 'none';
-  document.getElementById('setupTabAnthropic').style.display = tab==='anthropic' ? 'block' : 'none';
-  document.getElementById('tabGemini').style.background    = tab==='gemini'    ? 'var(--accent)' : 'white';
-  document.getElementById('tabGemini').style.color         = tab==='gemini'    ? 'white' : 'var(--ink-light)';
-  document.getElementById('tabAnthropic').style.background = tab==='anthropic' ? 'var(--accent)' : 'white';
-  document.getElementById('tabAnthropic').style.color      = tab==='anthropic' ? 'white' : 'var(--ink-light)';
-}
-function openAiSetup(){
-  document.getElementById('aiSetupScreen').style.display='block';
-  document.getElementById('aiMainScreen').style.display='none';
-  document.getElementById('aiModalSub').style.display='none';
-}
-function openAiModal(){
-  var hasKey = !!getStoredKey();
-  document.getElementById('aiSetupScreen').style.display = hasKey ? 'none' : 'block';
-  document.getElementById('aiMainScreen').style.display  = hasKey ? 'block' : 'none';
-  document.getElementById('aiModalSub').style.display    = hasKey ? 'block' : 'none';
-  if(hasKey){
-    checkApiKeyStatus();
-    document.getElementById('aiTitle').value='';
-    document.getElementById('aiAbstract').value='';
-    document.getElementById('aiEditFields').style.display='none';
-    document.getElementById('aiResultSection').style.display='none';
-    var rb=document.getElementById('aiResultBox');rb.style.display='none';rb.className='ai-result-box';rb.textContent='';
-    document.getElementById('aiApplyBtn').disabled=true;
-    aiParsed=null;
-  }
-  document.getElementById('aiModalOverlay').classList.add('open');
-}
-function saveApiKeyFromSetup(type){
-  var inputId = type==='gemini' ? 'setupGeminiInput' : 'setupAnthropicInput';
-  var k=document.getElementById(inputId).value.trim();
-  if(!k){alert('\u8ACB\u5148\u8F38\u5165 API Key');return;}
-  if(type==='gemini' && k.length < 10){alert('\u8ACB\u8F38\u5165\u6B63\u78BA\u7684 Gemini API Key');return;}
-  if(type==='anthropic' && !k.startsWith('sk-ant-')){alert('Anthropic Key \u683C\u5F0F\u61C9\u70BA sk-ant-\u2026');return;}
-  var storeKey = type==='gemini' ? 'gemini_api_key' : 'anthropic_api_key';
-  localStorage.removeItem(type==='gemini'?'anthropic_api_key':'gemini_api_key');
-  localStorage.setItem(storeKey, k);
-  document.getElementById('setupKeySaved').style.display='block';
-  setTimeout(function(){ openAiModal(); }, 1200);
-}
-function closeAiModal(){document.getElementById('aiModalOverlay').classList.remove('open');}
-
-function runAiFill(){
-  var title=document.getElementById('aiTitle').value.trim();
-  var abstract=document.getElementById('aiAbstract').value.trim();
-  if(!title&&!abstract){showToast('\u8ACB\u8F38\u5165\u6A19\u984C\u6216\u6458\u8981','error');return;}
-
-  var btn=document.getElementById('aiRunBtn');
-  var resultBox=document.getElementById('aiResultBox');
-  var resultSection=document.getElementById('aiResultSection');
-  btn.disabled=true;btn.textContent='\u25B6 \u6574\u7406\u4E2D\u2026';
-  resultSection.style.display='block';
-  resultBox.textContent='\u6574\u7406\u4E2D\u2026';resultBox.style.display='block';resultBox.className='ai-result-box loading';
-  document.getElementById('aiEditFields').style.display='none';
-
-  var prompt='\u4F60\u662F\u4E00\u500B\u8AD6\u6587\u8CC7\u8A0A\u64F7\u53D6\u52A9\u624B\u3002\u8ACB\u5F9E\u4EE5\u4E0B\u8AD6\u6587\u6A19\u984C\u548C\u6458\u8981\u4E2D\uFF0C\u64F7\u53D6\u7D50\u69CB\u5316\u8CC7\u8A0A\uFF0C\u4E26\u56B4\u683C\u6309\u7167\u4EE5\u4E0B JSON \u683C\u5F0F\u56DE\u50B3\uFF0C\u4E0D\u8981\u8F38\u51FA\u4EFB\u4F55\u5176\u4ED6\u6587\u5B57\uFF1A\n\n{"title": "\u8AD6\u6587\u5B8C\u6574\u6A19\u984C","authors": "\u4F5C\u8005\u5217\u8868","year": \u5E74\u4EFD\u6578\u5B57\u6216null,"journal": "\u671F\u520A\u6216\u6703\u8B70\u540D\u7A31","tags": ["\u6A19\u7C641","\u6A19\u7C642","\u6A19\u7C643"],"abstract_zh": "\u6458\u8981\u7684\u7E41\u9AD4\u4E2D\u6587\u7FFB\u8B6F","keyPoints": ["\u91CD\u9EDE1","\u91CD\u9EDE2","\u91CD\u9EDE3"]}\n\n\u6A19\u984C\uFF1A'+title+'\n\u6458\u8981\uFF1A'+abstract+'\n\n\u6CE8\u610F\uFF1A\n- tags \u61C9\u70BA 3-6 \u500B\u82F1\u6587\u5C0F\u5BEB\u95DC\u9375\u5B57\n- keyPoints \u61C9\u70BA 3-5 \u689D\u91CD\u9EDE\uFF0C\u7528\u7E41\u9AD4\u4E2D\u6587\u8868\u9054\n- abstract_zh \u8ACB\u63D0\u4F9B\u7E41\u9AD4\u4E2D\u6587\u7248\u672C';
-
-  var apiKey=getStoredKey();
-  var keyType=getKeyType();
-  if(!apiKey){
-    resultBox.style.display='block';
-    resultBox.innerHTML='\u26A0 \u8ACB\u5148\u8A2D\u5B9A API Key';
-    resultSection.style.display='block';
-    btn.disabled=false;btn.textContent='\u25B6 AI \u6574\u7406';
-    return;
-  }
-
-  var fetchPromise;
-  if(keyType==='gemini'){
-    fetchPromise=fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+apiKey,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-    }).then(function(gRes){
-      if(!gRes.ok) return gRes.json().catch(function(){return {};}).then(function(e){throw new Error('HTTP '+gRes.status+': '+(e&&e.error&&e.error.message||gRes.statusText));});
-      return gRes.json().then(function(gData){return gData&&gData.candidates&&gData.candidates[0]&&gData.candidates[0].content&&gData.candidates[0].content.parts&&gData.candidates[0].content.parts[0]&&gData.candidates[0].content.parts[0].text||'';});
-    });
-  } else {
-    fetchPromise=fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
-      body:JSON.stringify({model:'claude-3-5-haiku-20241022',max_tokens:1000,messages:[{role:'user',content:prompt}]})
-    }).then(function(aRes){
-      if(!aRes.ok) return aRes.json().catch(function(){return {};}).then(function(e){throw new Error('HTTP '+aRes.status+': '+(e&&e.error&&e.error.message||aRes.statusText));});
-      return aRes.json().then(function(aData){return aData&&aData.content&&aData.content[0]&&aData.content[0].text||'';});
-    });
-  }
-
-  fetchPromise.then(function(text){
-    resultBox.style.display='none';resultBox.className='ai-result-box';
-    var jsonMatch=text.match(/\{[\s\S]*\}/);
-    if(jsonMatch){
-      try{
-        aiParsed=JSON.parse(jsonMatch[0]);
-        document.getElementById('aiEditTitle').value      = aiParsed.title||'';
-        document.getElementById('aiEditAuthors').value    = aiParsed.authors||'';
-        document.getElementById('aiEditYear').value       = aiParsed.year||'';
-        document.getElementById('aiEditJournal').value    = aiParsed.journal||'';
-        document.getElementById('aiEditTags').value       = (aiParsed.tags||[]).join(', ');
-        document.getElementById('aiEditAbstract').value   = aiParsed.abstract_zh||'';
-        document.getElementById('aiEditKeyPoints').value  = (aiParsed.keyPoints||[]).join('\n');
-        document.getElementById('aiEditFields').style.display='block';
-        document.getElementById('aiApplyBtn').disabled=false;
-      }catch(parseErr){
-        resultBox.style.display='block';
-        resultBox.textContent='\u26A0 \u7121\u6CD5\u89E3\u6790\u56DE\u61C9\uFF0C\u8ACB\u91CD\u8A66: '+text.slice(0,200);
-      }
-    }else{
-      resultBox.style.display='block';
-      resultBox.textContent='\u26A0 \u7121\u6CD5\u89E3\u6790\u56DE\u61C9\uFF0C\u8ACB\u91CD\u8A66: '+text.slice(0,200);
-    }
-    btn.disabled=false;btn.textContent='\u25B6 AI \u6574\u7406';
-  }).catch(function(netErr){
-    resultBox.innerHTML='\u26A0 \u932F\u8AA4\uFF1A'+netErr.message+'<br><small style="opacity:.7;line-height:1.8">\u8ACB\u78BA\u8A8D\uFF1A\u2460 \u5F9E https:// \u7DB2\u5740\u958B\u555F　\u2461 Key \u6B63\u78BA　\u2462 \u7DB2\u8DEF\u6B63\u5E38</small>';
-    btn.disabled=false;btn.textContent='\u25B6 AI \u6574\u7406';
-  });
-}
-
-function applyAiResult(){
-  if(!aiParsed)return;
-  var title    = document.getElementById('aiEditTitle').value.trim();
-  var authors  = document.getElementById('aiEditAuthors').value.trim();
-  var year     = document.getElementById('aiEditYear').value.trim();
-  var journal  = document.getElementById('aiEditJournal').value.trim();
-  var tags     = document.getElementById('aiEditTags').value.trim();
-  var abstract = document.getElementById('aiEditAbstract').value.trim();
-  var keyPoints= document.getElementById('aiEditKeyPoints').value.trim();
-  closeAiModal();
-  editingId=null;
-  document.getElementById('modalTitle').textContent='\u65B0\u589E\u8AD6\u6587\uFF08AI \u5DF2\u586B\u5165\uFF09Add Paper';
-  document.getElementById('fTitle').value=title;
-  document.getElementById('fAuthors').value=authors;
-  document.getElementById('fYear').value=year;
-  document.getElementById('fJournal').value=journal;
-  document.getElementById('fTags').value=tags;
-  document.getElementById('fAbstract').value=abstract;
-  document.getElementById('fKeyPoints').value=keyPoints;
-  document.getElementById('fNotes').value='';
-  document.getElementById('fDoi').value='';
-  document.getElementById('modalOverlay').classList.add('open');
-  showToast('AI \u5DF2\u586B\u5165\u8CC7\u6599\uFF0C\u8ACB\u88DC\u5145\u7B46\u8A18\u5F8C\u5132\u5B58','info');
-}
 
 // Global events
 // Click-outside disabled for del modal
 document.addEventListener('keydown',function(e){
-  if(e.key==='Escape'){closeModal();closeAiModal();closeDelModal();}
+  if(e.key==='Escape'){closeModal();closeDelModal();}
   if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();document.getElementById('searchTitle').focus();}
 });
 
